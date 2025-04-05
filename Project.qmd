@@ -2,12 +2,139 @@
 title: "Malaria and HIV : lethality on population scale"
 author: Nour Jendoubi
 theme: minty
+format: dashboard
 ---
 
 
 ```{python}
+# Packages import
 import plotly.express as px
 import pandas as pd
 import numpy as np
- 
+import ipywidgets as widgets
+from IPython.display import display
 ```
+
+
+```{python}
+# data files import
+## malaria per capita
+m_capita=pd.read_csv("data\malaria_cases_per_100000_reported.csv").melt(id_vars="country", var_name="year", value_name="malaria_per_capita")
+
+
+##malaria deaths per capita
+m_deaths_capita=pd.read_csv("data\malaria_deaths_per_100000_reported.csv").melt(id_vars="country", var_name="year", value_name="malaria_deaths_per_capita")
+
+
+## malaria total cases
+m_cases=pd.read_csv("data\malaria_number_of_cases_reported.csv").melt(id_vars="country", var_name="year", value_name="malaria_total")
+
+
+## malaria deaths total cases
+m_death=pd.read_csv("data\malaria_number_of_deaths_reported.csv").melt(id_vars="country", var_name="year", value_name="malaria_deaths_total")
+
+
+## hiv incidence
+hiv_incidence=pd.read_csv("data\\newly_hiv_infected_percent_age_15_49.csv").melt(id_vars="country", var_name="year", value_name="hiv_incidence")
+
+## hiv prevalence
+hiv_prevalence=pd.read_csv("data\people_living_with_hiv_number_all_ages.csv").melt(id_vars="country", var_name="year", value_name="hiv_prevalence")
+
+## hiv deaths total
+hiv_deaths_year=pd.read_csv("data\\annual_hiv_deaths_number_all_ages.csv").melt(id_vars="country", var_name="year",  value_name="hiv_deaths_total")
+
+## Urban poverty
+urban_poverty = pd.read_csv("data\\urban_poverty.csv").melt(id_vars="country", var_name="year", value_name="urban_poverty")
+
+## Rural poverty
+rural_poverty = pd.read_csv("data\\rural_poverty.csv").melt(id_vars="country", var_name="year", value_name="rural_poverty")
+
+# literacy
+literacy = pd.read_csv("data\literacy_rate_adult_total_percent_of_people_ages_15_and_above.csv").melt(id_vars="country", var_name="year", value_name="rural_poverty")
+
+# hiv mortality, new cases and prevalence relative to rural and urban poverty. My assumption is that urban poverty increases incidence and prevalence of HIV. But rural poverty doesn't increase HIV incidence but mortality relative to incidence.
+
+```
+
+
+```{python}
+# Merging all dataframes into 2 dataframes : hiv and malaria
+malaria=pd.merge(m_capita, m_deaths_capita, on=["country", "year"])
+malaria=pd.merge(malaria, m_cases, on = ["country", "year"])
+malaria= pd.merge(malaria, m_death, on = ["country", "year"])
+malaria= pd.merge(malaria, rural_poverty, on= ["country", "year"])
+malaria=pd.merge(malaria, urban_poverty, on= ["country", "year"])
+malaria=pd.merge(malaria, literacy, on= ["country", "year"])
+
+hiv=pd.merge(hiv_deaths_year, hiv_incidence, on = ["country", "year"])
+hiv=pd.merge(hiv, hiv_prevalence, on = ["country", "year"])
+hiv = pd.merge(hiv, rural_poverty, on = ["country", "year"])
+hiv = pd.merge(hiv, urban_poverty, on = ["country", "year"])
+hiv = pd.merge(hiv, literacy, on = ["country", "year"])
+
+
+```
+
+```{python}
+
+hiv = hiv.applymap(lambda x: x.replace('k', '000') if isinstance(x, str) else x)
+hiv = hiv.apply(pd.to_numeric, errors='coerce')
+malaria = malaria.applymap(lambda x: x.replace('k', '000') if isinstance(x, str) else x)
+malaria = malaria.apply(pd.to_numeric, errors='coerce')
+```
+
+
+# HIV
+
+## total deaths by country every year
+
+### select the country to view {.sidebar}
+
+```{python}
+# List of countries for user to select
+countries = hiv['Country'].unique().tolist()
+
+# Create a dropdown menu
+country_dropdown = widgets.Dropdown(
+    options=countries,
+    value=countries[0],
+    description='Country:',
+)
+
+# Display the dropdown menu
+display(country_dropdown)
+```
+
+###
+```{python}
+# Function to plot data for a specific country
+def plot_data(country):
+    # Filter data for the selected country
+    filtered_data = hiv[hiv['Country'] == country]
+    
+    # Plot the data
+    plt.figure(figsize=(10, 5))
+    plt.plot(filtered_data['Year'], filtered_data['Value'], marker='o')
+    plt.title(f'Data for Country {country}')
+    plt.xlabel('Year')
+    plt.ylabel('Value')
+    plt.grid(True)
+    plt.show()
+
+
+# Function to update the plot based on selected country
+def update_plot(change):
+    plot_data(change.new)
+
+# Attach the update function to the dropdown menu
+country_dropdown.observe(update_plot, names='value')
+
+# Initial plot
+plot_data(countries[0])
+```
+
+###
+
+# Malaria
+
+# HIV 
