@@ -77,10 +77,16 @@ hiv = pd.merge(hiv, literacy, on = ["country", "year"])
 
 ```{python}
 
-hiv = hiv.applymap(lambda x: x.replace('k', '000') if isinstance(x, str) else x)
-hiv = hiv.apply(pd.to_numeric, errors='coerce')
-malaria = malaria.applymap(lambda x: x.replace('k', '000') if isinstance(x, str) else x)
-malaria = malaria.apply(pd.to_numeric, errors='coerce')
+for col in hiv.columns:
+    if col != 'country':
+        hiv[col] = hiv[col].apply(lambda x: x.replace('k', '000') if isinstance(x, str) else x)
+        hiv[col] = pd.to_numeric(hiv[col], errors='coerce')
+
+
+for col in malaria.columns:
+    if col != 'country':
+        malaria[col] = malaria[col].apply(lambda x: x.replace('k', '000') if isinstance(x, str) else x)
+        malaria[col] = pd.to_numeric(malaria[col], errors='coerce')
 ```
 
 
@@ -88,11 +94,20 @@ malaria = malaria.apply(pd.to_numeric, errors='coerce')
 
 ## total deaths by country every year
 
-### select the country to view {.sidebar}
+### select the country to view
 
 ```{python}
+# Function to plot data for a specific country using plotly.express
+def plot_data(country):
+    # Filter data for the selected country
+    filtered_data = hiv[hiv['country'] == country]
+    
+    # Plot the data using plotly.express
+    fig = px.line(filtered_data, x='year', y='hiv_deaths_total', title=f'Data for Country {country}')
+    fig.show()
+
 # List of countries for user to select
-countries = hiv['Country'].unique().tolist()
+countries = hiv['country'].unique().tolist()
 
 # Create a dropdown menu
 country_dropdown = widgets.Dropdown(
@@ -103,24 +118,6 @@ country_dropdown = widgets.Dropdown(
 
 # Display the dropdown menu
 display(country_dropdown)
-```
-
-###
-```{python}
-# Function to plot data for a specific country
-def plot_data(country):
-    # Filter data for the selected country
-    filtered_data = hiv[hiv['Country'] == country]
-    
-    # Plot the data
-    plt.figure(figsize=(10, 5))
-    plt.plot(filtered_data['Year'], filtered_data['Value'], marker='o')
-    plt.title(f'Data for Country {country}')
-    plt.xlabel('Year')
-    plt.ylabel('Value')
-    plt.grid(True)
-    plt.show()
-
 
 # Function to update the plot based on selected country
 def update_plot(change):
@@ -133,8 +130,7 @@ country_dropdown.observe(update_plot, names='value')
 plot_data(countries[0])
 ```
 
-###
 
 # Malaria
 
-# HIV 
+# literacy
