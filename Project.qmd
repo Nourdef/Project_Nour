@@ -1,5 +1,5 @@
 ---
-title: "Malaria and HIV : lethality on population scale"
+title: "BCG vaccine and Tuberculosis"
 author: Nour Jendoubi
 theme: minty
 format: dashboard
@@ -8,129 +8,159 @@ format: dashboard
 
 ```{python}
 # Packages import
-import plotly.express as px
 import pandas as pd
-import numpy as np
+import plotly.express as px
+import country_converter as coco
 import ipywidgets as widgets
-from IPython.display import display
+from IPython.display import display, clear_output
 ```
 
 
 ```{python}
-# data files import
-## malaria per capita
-m_capita=pd.read_csv("data\malaria_cases_per_100000_reported.csv").melt(id_vars="country", var_name="year", value_name="malaria_per_capita")
+
+### dataframes. all of it melted to sort year and country
+# BCG vaccine
+bcg =pd.read_csv("data\\bcg_vacc.csv").melt(id_vars="country", var_name="year", value_name="vac_status")
+
+# Tuberculosis
+tb_death = pd.read_csv("data\\all_forms_of_tb_number_of_deaths_estimated.csv").melt(id_vars="country", var_name="year", value_name="tb_death")
+tb_incidence = pd.read_csv("data\\all_forms_of_tb_incidence_per_100000_estimated.csv").melt(id_vars="country", var_name="year", value_name="tb_incidence")
+
+### merge of all of the data
+
+data= pd.merge(bcg, tb_death, on = ["country", "year"])
+data= pd.merge(data, tb_incidence, on = ["country", "year"])
+
+### making the values numerical 
+data["tb_death"] = data["tb_death"].replace('k', '000', regex=True)
+data["tb_incidence"] = data["tb_incidence"].replace('k', '000', regex=True)
 
 
-##malaria deaths per capita
-m_deaths_capita=pd.read_csv("data\malaria_deaths_per_100000_reported.csv").melt(id_vars="country", var_name="year", value_name="malaria_deaths_per_capita")
+data["vac_status"] = pd.to_numeric(data["vac_status"])
+data["tb_death"] = pd.to_numeric(data["tb_death"])
+data["tb_incidence"] = pd.to_numeric(data["tb_incidence"])
+data["year"] = pd.to_numeric(data["year"])
 
-
-## malaria total cases
-m_cases=pd.read_csv("data\malaria_number_of_cases_reported.csv").melt(id_vars="country", var_name="year", value_name="malaria_total")
-
-
-## malaria deaths total cases
-m_death=pd.read_csv("data\malaria_number_of_deaths_reported.csv").melt(id_vars="country", var_name="year", value_name="malaria_deaths_total")
-
-
-## hiv incidence
-hiv_incidence=pd.read_csv("data\\newly_hiv_infected_percent_age_15_49.csv").melt(id_vars="country", var_name="year", value_name="hiv_incidence")
-
-## hiv prevalence
-hiv_prevalence=pd.read_csv("data\people_living_with_hiv_number_all_ages.csv").melt(id_vars="country", var_name="year", value_name="hiv_prevalence")
-
-## hiv deaths total
-hiv_deaths_year=pd.read_csv("data\\annual_hiv_deaths_number_all_ages.csv").melt(id_vars="country", var_name="year",  value_name="hiv_deaths_total")
-
-## Urban poverty
-urban_poverty = pd.read_csv("data\\urban_poverty.csv").melt(id_vars="country", var_name="year", value_name="urban_poverty")
-
-## Rural poverty
-rural_poverty = pd.read_csv("data\\rural_poverty.csv").melt(id_vars="country", var_name="year", value_name="rural_poverty")
-
-# literacy
-literacy = pd.read_csv("data\literacy_rate_adult_total_percent_of_people_ages_15_and_above.csv").melt(id_vars="country", var_name="year", value_name="rural_poverty")
-
-# hiv mortality, new cases and prevalence relative to rural and urban poverty. My assumption is that urban poverty increases incidence and prevalence of HIV. But rural poverty doesn't increase HIV incidence but mortality relative to incidence.
-
+data =data.replace({"UAE": "United Arab Emirates"})
+data["country_code"] = coco.convert(
+    data["country"], to="ISO3"
+)
 ```
 
-
 ```{python}
-# Merging all dataframes into 2 dataframes : hiv and malaria
-malaria=pd.merge(m_capita, m_deaths_capita, on=["country", "year"])
-malaria=pd.merge(malaria, m_cases, on = ["country", "year"])
-malaria= pd.merge(malaria, m_death, on = ["country", "year"])
-malaria= pd.merge(malaria, rural_poverty, on= ["country", "year"])
-malaria=pd.merge(malaria, urban_poverty, on= ["country", "year"])
-malaria=pd.merge(malaria, literacy, on= ["country", "year"])
-
-hiv=pd.merge(hiv_deaths_year, hiv_incidence, on = ["country", "year"])
-hiv=pd.merge(hiv, hiv_prevalence, on = ["country", "year"])
-hiv = pd.merge(hiv, rural_poverty, on = ["country", "year"])
-hiv = pd.merge(hiv, urban_poverty, on = ["country", "year"])
-hiv = pd.merge(hiv, literacy, on = ["country", "year"])
-
-
+data_2020 = data[data['year'] == 2020]
 ```
 
 ```{python}
 
-for col in hiv.columns:
-    if col != 'country':
-        hiv[col] = hiv[col].apply(lambda x: x.replace('k', '000') if isinstance(x, str) else x)
-        hiv[col] = pd.to_numeric(hiv[col], errors='coerce')
+# all time
+highest_tb_death = data.loc[data['tb_death'].idxmax()]
+lowest_tb_death = data.loc[data['tb_death'].idxmin()]
+highest_bcg = data.loc[data['vac_status'].idxmax()]
+lowest_bcg = data.loc[data['vac_status'].idxmin()]
 
+# Tb death in 2020
+highest_tb_death_2020 = data_2020.loc[data_2020["tb_death"].idxmax()]
+lowest_tb_death_2020 = data_2020.loc[data_2020["tb_death"].idxmin()]
 
-for col in malaria.columns:
-    if col != 'country':
-        malaria[col] = malaria[col].apply(lambda x: x.replace('k', '000') if isinstance(x, str) else x)
-        malaria[col] = pd.to_numeric(malaria[col], errors='coerce')
+# bcg in 2020
+highest_bcg_2020 = data_2020.loc[data_2020['vac_status'].idxmax()]
+lowest_bcg_2020 = data_2020.loc[data_2020['vac_status'].idxmin()]
+
+total_tb_death_per_year = data.groupby('year')['tb_death'].sum()
+
 ```
 
 
-# HIV
+# Tuberculosis
 
-## total deaths by country every year
+## {width="70%"}
 
-### select the country to view
+
+
+## 
 
 ```{python}
-# Function to plot data for a specific country using plotly.express
-def plot_data(country):
-    # Filter data for the selected country
-    filtered_data = hiv[hiv['country'] == country]
-    
-    # Plot the data using plotly.express
-    fig = px.line(filtered_data, x='year', y='hiv_deaths_total', title=f'Data for Country {country}')
-    fig.show()
-
-# List of countries for user to select
-countries = hiv['country'].unique().tolist()
-
-# Create a dropdown menu
-country_dropdown = widgets.Dropdown(
-    options=countries,
-    value=countries[0],
-    description='Country:',
+fig_map = px.choropleth(
+    data,
+    locations="country_code",
+    color="tb_death",
+    hover_name="country",
+    animation_frame="year",
+    title="tuberculosis death",
 )
 
-# Display the dropdown menu
-display(country_dropdown)
-
-# Function to update the plot based on selected country
-def update_plot(change):
-    plot_data(change.new)
-
-# Attach the update function to the dropdown menu
-country_dropdown.observe(update_plot, names='value')
-
-# Initial plot
-plot_data(countries[0])
+fig_map.show()
 ```
 
 
-# Malaria
+# bcg vaccination
+##
+:::{.valuebox title="Highest BCG vaccination in 2020" color="primary"}
+`{python} highest_bcg['country']`
+:::
+:::{.valuebox title="Lowest BCG baccination in 2020"}
+`{python} lowest_bcg['country']`
+:::
 
-# literacy
+##
+```{python}
+fig_map = px.choropleth(
+    data,
+    locations="country_code",
+    color="vac_status",
+    hover_name="country",
+    animation_frame="year",
+    title="Vaccination status",
+)
+
+fig_map.show()
+```
+
+# BCG and tuberculosis in 2020
+
+##
+:::{.valuebox title="Highest BCG vaccination in 2020" color="primary"}
+`{python} highest_bcg_2020['country']`
+:::
+:::{.valuebox title="Lowest BCG baccination in 2020"}
+`{python} lowest_bcg_2020['country']`
+:::
+##
+:::{.valuebox title="country with the lowest tb death in 2020" color="primary"}
+`{python} lowest_tb_death_2020["country"]`
+:::
+
+:::{.valuebox title="country with the highest tuberculosis incidence in 2020" color="secondary"}
+`{python} highest_tb_death_2020["country"]`
+:::
+
+##
+
+
+```{python}
+# Create a dropdown menu for selecting a country
+country_dropdown = widgets.Dropdown(
+    options=data['country'].unique(),
+    description='Country:',
+    disabled=False,
+)
+
+# Function to update the plot based on the selected country
+def update_plot(country):
+    filtered_data = data[data['country'] == country]
+    fig = px.line(filtered_data, x='year', y=['vac_status', 'tb_death'], title=f'Evolution of TB Death and BCG Vaccination in {country}')
+    fig.show()
+
+# Display the dropdown menu and plot
+def on_country_change(change):
+    clear_output(wait=True)
+    display(country_dropdown)
+    update_plot(change['new'])
+
+country_dropdown.observe(on_country_change, names='value')
+display(country_dropdown)
+
+# Initial plot
+update_plot(country_dropdown.value)
+```
