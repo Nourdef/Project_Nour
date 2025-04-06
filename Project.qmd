@@ -133,7 +133,6 @@ fig_map.show()
 :::{.valuebox title="Lowest BCG vaccination in 2020"}
 `{python} lowest_bcg_2020['country']`
 :::
-##
 :::{.valuebox title="country with the lowest tb death in 2020" color="primary"}
 `{python} lowest_tb_death_2020["country"]`
 :::
