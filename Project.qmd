@@ -74,8 +74,14 @@ total_tb_death_per_year = data.groupby('year')['tb_death'].sum()
 
 # Tuberculosis
 
-## {width="70%"}
+##
+:::{.valuebox title="country with the lowest tb death all time" color="primary"}
+`{python} lowest_tb_death["country"]`
+:::
 
+:::{.valuebox title="country with the highest tuberculosis incidence all time" color="secondary"}
+`{python} highest_tb_death["country"]`
+:::
 
 
 ## 
@@ -137,6 +143,40 @@ fig_map.show()
 
 ##
 
+###
+```{python}
+
+# Create a dropdown menu for selecting a country
+country_dropdown = widgets.Dropdown(
+    options=data['country'].unique(),
+    description='Country:',
+    disabled=False,
+)
+
+# Create a button to refresh the plot
+refresh_button = widgets.Button(description="Refresh Plot")
+
+# Function to update the plot based on the selected country
+def update_plot(change):
+    country = country_dropdown.value
+    filtered_data = data[data['country'] == country]
+    fig = px.line(filtered_data, x='year', y='tb_death', title=f'Evolution of TB Death in {country}')
+    clear_output(wait=True)
+    display(country_dropdown, refresh_button)
+    fig.show()
+
+
+# Display the dropdown menu, button, and plot
+refresh_button.on_click(update_plot)
+display(country_dropdown, refresh_button)
+
+# Initial plot
+update_plot(None)
+update_plot({'new': country_dropdown.value})
+```
+
+###
+
 
 ```{python}
 # Create a dropdown menu for selecting a country
@@ -146,21 +186,25 @@ country_dropdown = widgets.Dropdown(
     disabled=False,
 )
 
+# Create a button to refresh the plot
+refresh_button = widgets.Button(description="Refresh Plot")
+
 # Function to update the plot based on the selected country
-def update_plot(country):
+def update_plot(change):
+    data["year"] = data["year"].astype(str)
+    country = country_dropdown.value
     filtered_data = data[data['country'] == country]
-    fig = px.line(filtered_data, x='year', y=['vac_status', 'tb_death'], title=f'Evolution of TB Death and BCG Vaccination in {country}')
-    fig.show()
-
-# Display the dropdown menu and plot
-def on_country_change(change):
+    fig = px.histogram(filtered_data, x='year', y='vac_status', title=f'Evolution of BCG vaccine in {country}')
     clear_output(wait=True)
-    display(country_dropdown)
-    update_plot(change['new'])
+    display(country_dropdown, refresh_button)
+    fig.show()
+    
 
-country_dropdown.observe(on_country_change, names='value')
-display(country_dropdown)
+# Display the dropdown menu, button, and plot
+refresh_button.on_click(update_plot)
+display(country_dropdown, refresh_button)
 
 # Initial plot
-update_plot(country_dropdown.value)
+update_plot(None)
+update_plot({'new': country_dropdown.value})
 ```
