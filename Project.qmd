@@ -204,15 +204,3 @@ country_dropdown_line.observe(update_line_plot, names='value')
 display(country_dropdown_line)
 update_line_plot()
 ```
-
-# 1
-
-
-```{python}
-from ipywidgets import interact
-
-def test_callback(value):
-    print(f"Dropdown changed to: {value}")
-
-interact(test_callback, value=['Option 1', 'Option 2', 'Option 3'])
-```
