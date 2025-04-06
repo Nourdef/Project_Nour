@@ -129,7 +129,7 @@ fig_map.show()
 :::{.valuebox title="Highest BCG vaccination in 2020" color="primary"}
 `{python} highest_bcg_2020['country']`
 :::
-:::{.valuebox title="Lowest BCG baccination in 2020"}
+:::{.valuebox title="Lowest BCG vaccination in 2020"}
 `{python} lowest_bcg_2020['country']`
 :::
 ##
@@ -145,34 +145,33 @@ fig_map.show()
 
 ###
 ```{python}
-
 # Create a dropdown menu for selecting a country
-country_dropdown = widgets.Dropdown(
+country_dropdown_histogram = widgets.Dropdown(
     options=data['country'].unique(),
     description='Country:',
     disabled=False,
 )
 
-# Create a button to refresh the plot
-refresh_button = widgets.Button(description="Refresh Plot")
-
 # Function to update the plot based on the selected country
-def update_plot(change):
-    country = country_dropdown.value
+def update_histogram_plot(change=None):
+    if change:  # Ensure this is triggered by a dropdown change
+        print(f"Dropdown value changed to: {country_dropdown_histogram.value}")  # Debugging
+    data["year"] = data["year"].astype(str)
+    country = country_dropdown_histogram.value
     filtered_data = data[data['country'] == country]
-    fig = px.line(filtered_data, x='year', y='tb_death', title=f'Evolution of TB Death in {country}')
+    fig = px.histogram(filtered_data, x='year', y='vac_status', labels={"vac_status": "vaccine status"}, title=f'Evolution of BCG vaccine in {country}')
     clear_output(wait=True)
-    display(country_dropdown, refresh_button)
+    display(country_dropdown_histogram)
+    fig.update_xaxes(tickangle=45)
     fig.show()
+    print("this is working")
 
+# Attach the update_histogram_plot function to the dropdown menu's value change
+country_dropdown_histogram.observe(update_histogram_plot, names='value')
 
-# Display the dropdown menu, button, and plot
-refresh_button.on_click(update_plot)
-display(country_dropdown, refresh_button)
-
-# Initial plot
-update_plot(None)
-update_plot({'new': country_dropdown.value})
+# Display the dropdown menu and initial plot
+display(country_dropdown_histogram)
+update_histogram_plot()
 ```
 
 ###
@@ -180,31 +179,40 @@ update_plot({'new': country_dropdown.value})
 
 ```{python}
 # Create a dropdown menu for selecting a country
-country_dropdown = widgets.Dropdown(
+country_dropdown_line = widgets.Dropdown(
     options=data['country'].unique(),
     description='Country:',
     disabled=False,
 )
 
-# Create a button to refresh the plot
-refresh_button = widgets.Button(description="Refresh Plot")
-
 # Function to update the plot based on the selected country
-def update_plot(change):
-    data["year"] = data["year"].astype(str)
-    country = country_dropdown.value
+def update_line_plot(change=None):
+    if change:  # Ensure this is triggered by a dropdown change
+        print(f"Dropdown value changed to: {country_dropdown_line.value}")  # Debugging
+    country = country_dropdown_line.value
     filtered_data = data[data['country'] == country]
-    fig = px.histogram(filtered_data, x='year', y='vac_status', title=f'Evolution of BCG vaccine in {country}')
+    fig = px.line(filtered_data, x='year', y='tb_death', labels={"tb_death": "tuberculosis deaths"}, title=f'Evolution of TB Death in {country}')
     clear_output(wait=True)
-    display(country_dropdown, refresh_button)
+    display(country_dropdown_line)
+    fig.update_xaxes(tickangle=45)
     fig.show()
-    
 
-# Display the dropdown menu, button, and plot
-refresh_button.on_click(update_plot)
-display(country_dropdown, refresh_button)
+# Attach the update_line_plot function to the dropdown menu's value change
+country_dropdown_line.observe(update_line_plot, names='value')
 
-# Initial plot
-update_plot(None)
-update_plot({'new': country_dropdown.value})
+# Display the dropdown menu and initial plot
+display(country_dropdown_line)
+update_line_plot()
+```
+
+# 1
+
+
+```{python}
+from ipywidgets import interact
+
+def test_callback(value):
+    print(f"Dropdown changed to: {value}")
+
+interact(test_callback, value=['Option 1', 'Option 2', 'Option 3'])
 ```
